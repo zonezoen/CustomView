@@ -5,4 +5,6 @@
     <color name="colorAccent">#FF108DF1</color>
     <color name="colorA2ccent">#E37346</color>
     <color name="colorA3ccent">#00aeff</color>
+    <color name="huaweiClockView">#34b2e0</color>
+    <color name="huaweiClockRed">#fb0001</color>
 </resources>

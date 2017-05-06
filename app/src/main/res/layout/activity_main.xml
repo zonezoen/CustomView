@@ -11,7 +11,7 @@
 <!--<com.zone.customview.FlashPoit-->
     <!--android:layout_width="match_parent"-->
     <!--android:layout_height="match_parent"/>-->
-<com.zone.customview.PentagonView
+<com.zone.customview.surfaceview.SRadarSweepView
     android:layout_width="match_parent"
     android:layout_height="match_parent"/>
 </LinearLayout>
