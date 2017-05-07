@@ -1,14 +1,10 @@
 package com.zone.customview.surfaceview;
 
-import android.animation.ValueAnimator;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.RectF;
 import android.graphics.SweepGradient;
 import android.os.Build;
 import android.os.Handler;
@@ -20,7 +16,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.zone.customview.R;
-import com.zone.customview.RadarSweepView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,51 +25,35 @@ import java.util.List;
  */
 
 public class SRadarSweepView extends SurfaceView implements SurfaceHolder.Callback, Runnable {
-    private SurfaceHolder holder;
-    private Canvas canvas;
-    private boolean mIsDrawing;
-    private int radius;
-    private String TAG = "zoneLog";
-    private float value;
-    private Matrix matrix;
-    private float sweepAngle;
-    private Canvas mCanvas;
-    private boolean isStart;
-    private int value1;
-
-    private int x;
-    private int y;
-    private int totalAngle;
-    private List<SRadarSweepView.MyPoint> pointList;
+    private SurfaceHolder holder;//
+    private Canvas canvas;//
+    private boolean mIsDrawing;//
+    private int radius;//圆半径
+    private String TAG = "zoneLog";//Log 日志的 tag
+    private Matrix matrix;//view 的矩阵参数，用于旋转圆形
+    private float sweepAngle;//
+    private boolean isStart;//是否开始 valueanimator
+    private int value1;//valueanimator 的渐变值
+    private int x;//红点的 x 坐标值
+    private int y;//红点的 y 坐标值
+    private int totalAngle;//总旋转角度
+    private Paint redPointPaint;//红点画笔
+    private Paint sweepPaint;//圆形画笔，绘制圆角渐变
+    private Paint strokeWhitePaint;//描边白色画笔，用于绘制空心圆圈
+    private List<SRadarSweepView.MyPoint> pointList;//记录红点的坐标
     private Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             if (msg.what == 0) {
-                int currentAngle = totalAngle % 360;
-                int currentRadius = (int) (radius * Math.random()) + 50;
-//                Log.d(TAG, "handleMessage: ======>" + currentAngle + "   " + currentRadius);
-                x = (int) (currentRadius * Math.cos(currentAngle));
+                int currentAngle = totalAngle % 360;//计算出一个圆范围内的旋转角度
+                int currentRadius = (int) (radius * Math.random()) + 50;//随机取得一个半径
+                x = (int) (currentRadius * Math.cos(currentAngle));//通过三角函数，计算出 x y 坐标值
                 y = (int) (currentRadius * Math.sin(currentAngle));
-//                if (currentAngle > 0 && currentAngle < 180) {
-//                    x = (int) (currentRadius * Math.sin(currentAngle % 90));
-//                    y = (int) (currentRadius * Math.cos(currentAngle % 90));
-//                } else if (currentAngle == 0) {
-//                    x = currentRadius;
-//                    y = 0;
-//                } else if (currentAngle == 180) {
-//                    x = -currentRadius;
-//                    y = 0;
-//                } else {
-//                    x = (int) (currentRadius * Math.cos(currentAngle ));
-//                    y = (int) (currentRadius * Math.sin(currentAngle ));
-//                }
-
-                if (currentAngle > 0 && currentAngle < 90) {
+                if (currentAngle > 0 && currentAngle < 90) {//计算出各个象限的情况
                     x = Math.abs(x);
                     y = Math.abs(y);
-                }
-                if (currentAngle > 90 && currentAngle < 180) {
+                } else if (currentAngle > 90 && currentAngle < 180) {
                     x = -Math.abs(x);
                     y = Math.abs(y);
                 } else if (currentAngle > 180 && currentAngle < 270) {
@@ -99,23 +78,17 @@ public class SRadarSweepView extends SurfaceView implements SurfaceHolder.Callba
                     y = -Math.abs(y);
                 }
 
-
                 pointList.add(0, new MyPoint(x, y, totalAngle));
-                Log.d(TAG, "drawCanvas: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 
-                Log.d(TAG, "handleMessage: =============== " + x);
-                Log.d(TAG, "handleMessage: =============== " + y);
-                if (pointList.size() > 5) {
+                if (pointList.size() > 5) {//超过 5 个数据时，抹掉最后一个数据
                     pointList.remove(pointList.size() - 1);
                 }
-                handler.sendEmptyMessageDelayed(0, 1000);
+                handler.sendEmptyMessageDelayed(0, 1000);//发送 message 实现不断循环
 
             }
         }
     };
-    private Paint redPaint;
-    private Paint paint;
-    private Paint strokeWhitePaint;
+
 
     public SRadarSweepView(Context context) {
         super(context);
@@ -135,26 +108,30 @@ public class SRadarSweepView extends SurfaceView implements SurfaceHolder.Callba
     private void init() {
         holder = getHolder();
         holder.addCallback(this);
-
-
+        sweepAngle = 8;//旋转角度
         matrix = new Matrix();
-        post(runnable);
+        post(runnable);//实现圆形的不断选装
         handler.sendEmptyMessageDelayed(0, 1000);
         isStart = true;
         pointList = new ArrayList<>();
         radius = 300;
 
-        redPaint = new Paint();
-        redPaint.setAntiAlias(true);
-        redPaint.setColor(Color.RED);
-        redPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        redPointPaint = new Paint();
+        redPointPaint.setAntiAlias(true);
+        redPointPaint.setColor(Color.RED);
+        redPointPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
-        paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setColor(Color.RED);
-        paint.setStyle(Paint.Style.FILL_AND_STROKE);
-        SweepGradient sweepGradient = new SweepGradient(0, 0, new int[]{0X10000000, Color.WHITE}, null);
-        paint.setShader(sweepGradient);
+        sweepPaint = new Paint();
+        sweepPaint.setAntiAlias(true);
+        sweepPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        SweepGradient sweepGradient = new SweepGradient(0, 0, new int[]{0X10000000, Color.WHITE}, null);//角度渐变，由透明变为白色
+        sweepPaint.setShader(sweepGradient);//设置 shader
+
+        strokeWhitePaint = new Paint();
+        strokeWhitePaint.setAntiAlias(true);
+        strokeWhitePaint.setColor(Color.WHITE);
+        strokeWhitePaint.setStyle(Paint.Style.STROKE);
+        strokeWhitePaint.setStrokeWidth(1);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -191,26 +168,21 @@ public class SRadarSweepView extends SurfaceView implements SurfaceHolder.Callba
             canvas = holder.lockCanvas();
 //            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.start);
 //            canvas.drawBitmap(bitmap, 0, 0, null);
-            canvas.drawColor(getResources().getColor(R.color.huaweiClockView));
-            canvas.save();
-            canvas.concat(matrix);
-            canvas.translate(getWidth() / 2, getHeight() / 2);
-            canvas.drawCircle(0, 0, radius, paint);
-            strokeWhitePaint = new Paint();
-            strokeWhitePaint.setAntiAlias(true);
-            strokeWhitePaint.setColor(Color.WHITE);
-            strokeWhitePaint.setStyle(Paint.Style.STROKE);
-            strokeWhitePaint.setStrokeWidth(1);
-            canvas.drawCircle(0, 0, radius + 80, strokeWhitePaint);
-            canvas.drawCircle(0, 0, radius - 80, strokeWhitePaint);
-            canvas.drawCircle(0, 0, radius - 160, strokeWhitePaint);
-            canvas.drawCircle(0, 0, radius - 240, strokeWhitePaint);
-            canvas.restore();
+            canvas.drawColor(getResources().getColor(R.color.huaweiClockView));//绘制背景颜色
+            canvas.save();//在另外一个图层来绘制圆形，否则会影响到后续操作
+            canvas.concat(matrix);//获取 view 的矩阵参数
+            canvas.translate(getWidth() / 2, getHeight() / 2);//将原点移动至中心
+            canvas.drawCircle(0, 0, radius, sweepPaint);//绘制渐变圆
+            canvas.drawCircle(0, 0, radius + 80, strokeWhitePaint);//以下是绘制描边圆圈
+            canvas.drawCircle(0, 0, radius - 80, strokeWhitePaint);//
+            canvas.drawCircle(0, 0, radius - 160, strokeWhitePaint);//
+            canvas.drawCircle(0, 0, radius - 240, strokeWhitePaint);//
+            canvas.restore();//合并之前的操作，相当于 photoshop 中的图层合并
 
 
-//            if (isStart) {
+//            if (isStart) {用于实现小红点的大小缩放效果
 //                isStart = false;
-//                ValueAnimator animator = ValueAnimator.ofInt(5, 30);
+//                ValueAnimator animator = ValueAnimator.ofInt(15, 30);
 //                animator.setDuration(800);
 //                animator.setRepeatCount(ValueAnimator.INFINITE);
 //                animator.setRepeatMode(ValueAnimator.REVERSE);
@@ -226,17 +198,10 @@ public class SRadarSweepView extends SurfaceView implements SurfaceHolder.Callba
 //                animator.start();
 //            }
             canvas.translate(getWidth() / 2, getHeight() / 2);
-
-//            Log.d(TAG, "drawCanvas: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             for (int i = 0; i < pointList.size(); i++) {
-                Log.d(TAG, "onDraw: size ==> " + pointList.size() + "  x===>" + pointList.get(i).x);
-                Log.d(TAG, "onDraw: y===>" + pointList.get(i).y);
-                canvas.drawCircle(pointList.get(i).x, pointList.get(i).y, 30, redPaint);
+                canvas.drawCircle(pointList.get(i).x, pointList.get(i).y, 30, redPointPaint);
+//                canvas.drawCircle(pointList.get(i).x, pointList.get(i).y, value1, redPointPaint);
             }
-//            canvas.drawCircle(pointList.get(0).x, pointList.get(0).y, 30, redPaint);
-//            Log.d(TAG, "drawCanvas: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-
-
             canvas.restore();
 
         } catch (Exception e) {
@@ -250,16 +215,14 @@ public class SRadarSweepView extends SurfaceView implements SurfaceHolder.Callba
     private Runnable runnable = new Runnable() {
         @Override
         public void run() {
-            sweepAngle = 8;
-            totalAngle += 8;
-//            Log.d(TAG, "run: " + totalAngle);
-            matrix.postRotate(8, getWidth() / 2, getHeight() / 2);
-            postInvalidate();
-            postDelayed(runnable, 200);
+            totalAngle += sweepAngle;//统计总的旋转角度
+            matrix.postRotate(sweepAngle, getWidth() / 2, getHeight() / 2);//旋转矩阵
+            postInvalidate();//刷新
+            postDelayed(runnable, 200);//调用自身，实现不断循环
         }
     };
 
-    class MyPoint {
+    class MyPoint {//用于记录小红点的圆心
         int x;
         int y;
         float angle;
@@ -269,7 +232,5 @@ public class SRadarSweepView extends SurfaceView implements SurfaceHolder.Callba
             this.y = y;
             this.angle = angle;
         }
-
-
     }
 }
